@@ -19,10 +19,10 @@ class TgBot(DefaultConfig):
 
 
 class Google(DefaultConfig):
-    PASSWORD: str
-    SERVICE_ACCOUNT_FILE: str
-    BOOK_MAIN: str
-    SHEET_DELIVERY: str
+    PASSWORD: Optional[str] = None
+    SERVICE_ACCOUNT_FILE: Optional[str] = None
+    BOOK_MAIN: Optional[str] = None
+    SHEET_DELIVERY: Optional[str] = None
 
 
 class Settings(BaseSettings):

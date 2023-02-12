@@ -100,14 +100,14 @@ def unique(file_name: str) -> None:
     open(file_name, 'w', encoding='utf-8').writelines(set(unique_lines))
 
 
-async def write_report_csv(directory: str, headers: list, data: list, city: str, cur_time: datetime):
+async def write_report_csv(directory: str, headers: list, data: list, cur_time: datetime):
     """Асинхронное создание файла csv"""
-    async with aiofiles.open(f'{directory}/{city}_{cur_time}.csv', 'w') as file:
+    async with aiofiles.open(f'{directory}/{cur_time}.csv', 'w') as file:
         writer = AsyncWriter(file)
         if headers:
             await writer.writerow(headers)
         await writer.writerows(data)
-    return f'{directory}/{city}_{cur_time}.csv'
+    return f'{directory}/{cur_time}.csv'
 
 
 def create_directory(file_path: str) -> None:

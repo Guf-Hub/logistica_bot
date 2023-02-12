@@ -11,7 +11,7 @@ from aiogram.utils.exceptions import Throttled
 from database.db import db
 from services.config import Settings
 from services.create_bot import bot, dp
-from services.functions import get_current_datetime
+from services.functions import get_current_datetime, dt_formatted
 from services.keybords import *
 from services.questions import positions
 
@@ -338,6 +338,15 @@ async def close_shift_end(message: types.Message, state=FSMContext):
         await state.finish()
 
 
+async def report(message: types.Message):
+    print(await db.report(511078246, dt_formatted(6)))
+    staff = set(x[0] for x in await db.get_active())
+    queue_staff_menu = InlineKeyboardMarkup(row_width=1) \
+        .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'get_queue={text[0]}') for text in staff))
+    await db.report(511078246, dt_formatted(6))
+
+    print(await db.report_csv())
+
 async def empty(message: types.Message):
     """Не понятные сообщения"""
     if not message.chat.type == 'private':
@@ -371,4 +380,5 @@ def register_handlers_delivery(d: Dispatcher):
     d.register_message_handler(close_shift_start, Text(equals=['❌ Закрыть смену'], ignore_case=True), state=None)
     d.register_message_handler(close_shift_end, state=CloseShift.yes)
     d.register_message_handler(queue, Text(equals=['Очередь'], ignore_case=True), state=None)
+    d.register_message_handler(report, Text(equals=['Отчет по сотруднику'], ignore_case=True), state=None)
     dp.register_message_handler(empty)

@@ -77,6 +77,12 @@ class Database:
         await self.cursor.execute("SELECT * FROM users WHERE status=1 ORDER BY last_name")
         return await self.cursor.fetchall()
 
+    async def get_active_courier(self) -> List[Tuple]:
+        """Получить все данные по Курьерам из БД(users), статус активный (status=1)"""
+        await self.cursor.execute(f"SELECT user_id, last_name ||' '|| first_name FROM users "
+                                  f"WHERE status=1 AND position='Курьер' ORDER BY last_name")
+        return await self.cursor.fetchall()
+
     async def is_active(self, user_id: Union[str, int]) -> bool:
         """Проверка наличия user_id в БД(users) по user_id"""
         await self.cursor.execute("SELECT * FROM users WHERE user_id=? AND status=1", [user_id])
@@ -122,6 +128,27 @@ class Database:
         queue = await self.cursor.fetchall()
         if queue:
             return queue
+        else:
+            return None
+
+    async def report(self, user_id: Union[str, int], date: str):
+        """Отчет по сотруднику"""
+        await self.cursor.execute(
+            f"SELECT add_date_time,staff, status FROM working_mode "
+            f"WHERE user_id=? AND date(add_date_time)>=?", [user_id, date])
+        response = await self.cursor.fetchall()
+        if response:
+            return response
+        else:
+            return None
+
+    async def report_csv(self):
+        """Получить все данные"""
+        await self.cursor.execute(
+            f"SELECT add_date_time,staff, status FROM working_mode")
+        response = await self.cursor.fetchall()
+        if response:
+            return response
         else:
             return None
 
