@@ -63,9 +63,6 @@ queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, r
 logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
     .add(KeyboardButton('Очередь'))
 
-positions_menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1) \
-    .add(KeyboardButton('Курьер'), KeyboardButton('Логист'))
-
 route_type = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('ЭКС'),
          KeyboardButton('МОЛ'),

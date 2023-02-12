@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+positions = ['Курьер','Логист']
 
 help_msg = {
     'staff': '''<b>Как я работаю???</b>

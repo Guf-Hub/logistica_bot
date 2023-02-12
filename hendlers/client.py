@@ -57,33 +57,8 @@ async def start(message: types.Message):
                 'status': 1
             }])
 
-            # inline = InlineKeyboardMarkup().add(
-            #     InlineKeyboardButton(text='✅ Добавить?', callback_data=f'add={user_id}={first_name}'))
-            #
-            # for admin in tg.ADMINS:
-            #     await bot.send_message(admin, f'Запрос на добавление:\n'
-            #                                   f'{user_id}\n'
-            #                                   f'{last_name}\n'
-            #                                   f'{first_name}\n'
-            #                                   f'{username}', reply_markup=inline)
-            # logists = await db.get_logists()
-            # if logists:
-            #     for logist in logists:
-            #         await bot.send_message(logist[0], f'Запрос на добавление:\n'
-            #                                           f'{user_id}\n'
-            #                                           f'{last_name}\n'
-            #                                           f'{first_name}\n'
-            #                                           f'{username}', reply_markup=inline)
-            # welcome_msg = f'''
-            # Привет, {message.from_user.first_name} 👋
-            # Добро пожаловать в команду.
-            # Я бот помощник, запишу рабочую инфу.
-            # Дождись активации...'''
-
-            # await message.answer(welcome_msg)
-
             welcome_msg = f'''
-                        Привет, {message.from_user.first_name} 👋
+                        Привет, {first_name} 👋
                         Добро пожаловать в команду.
                         Я бот помощник, запишу рабочую инфу.
                         Нажмите октрыть смену, чтобы вставь в очередь 👇'''

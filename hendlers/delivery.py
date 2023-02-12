@@ -7,11 +7,14 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils.exceptions import Throttled
+
 from database.db import db
 from services.config import Settings
 from services.create_bot import bot, dp
 from services.functions import *
 from services.keybords import *
+from services.questions import positions
+
 
 tg = Settings().tg
 g = Settings().gl
@@ -46,35 +49,6 @@ async def cancel(message: types.Message, state=FSMContext):
         await message.reply('Нет доступа', reply_markup=remove)
 
 
-class NewStaff(StatesGroup):
-    """Класс для добавления нового сотрудника в БД(users)"""
-    user_id = State()
-    first_name = State()
-    position = State()
-
-
-async def add_staff(message: types.Message, state=FSMContext):
-    async with state.proxy() as data:
-        data['position'] = message.text
-    await NewStaff.next()
-    user_id = data['user_id']
-    await db.update('users', {'position': data['position'], 'status': 1}, {'user_id': user_id})
-    try:
-        msg = f'Аккаунт активирован ✌\n' \
-              f'{data["first_name"]}, теперь ты в команде!!!' \
-              f'\nМенюшечка 👇'
-
-        if await db.is_logist(user_id):
-            await bot.send_message(user_id, msg, reply_markup=logist_menu)
-        else:
-            await bot.send_message(user_id, msg, reply_markup=start_menu)
-
-        await message.answer(f'Аккаунт активирован ✌', reply_markup=boss_menu)
-    except Exception as e:
-        logging.warning(f'{user_id} {e}')
-    await state.finish()
-
-
 class UpdateStaff(StatesGroup):
     """Класс для обновления данных по сотруднику в БД(users)"""
     user_id = State()
@@ -93,13 +67,19 @@ async def update_staff(message: types.Message):
 
 
 async def update_staff_end(message: types.Message, state=FSMContext):
-    async with state.proxy() as data:
-        data['position'] = message.text
-    await UpdateStaff.next()
-    await db.update('users', {'position': data['position']}, {'user_id': data['user_id']})
-    msg = 'Должность обновили 😁'
-    await message.answer(msg, reply_markup=boss_menu)
-    await state.finish()
+    text = message.text
+    if text in positions:
+        async with state.proxy() as data:
+            data['position'] = text
+        await UpdateStaff.next()
+        await db.update('users', {'position': data['position']}, {'user_id': data['user_id']})
+        await message.answer(f'Должность обновили на {text} 😁', reply_markup=boss_menu)
+        await state.finish()
+    else:
+        await UpdateStaff.position.set()
+        positions_menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1) \
+            .add(*(KeyboardButton(text) for text in positions))
+        await message.reply('Выбери 👇', reply_markup=positions_menu)
 
 
 async def activate_staff(message: types.Message):
@@ -291,38 +271,18 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
             data['user_id'] = user_id
         await UpdateStaff.next()
         await UpdateStaff.position.set()
-        await bot.send_message(call.from_user.id, 'Выбери должность 👇', reply_markup=positions_menu)
 
-    elif 'act=' in call.data:
-        user_id = call.data.split('=')[1]
-        await db.update('users', {'status': 1}, {'user_id': user_id})
-        await call.answer('Активировали сотрудника 👍')
-        await bot.send_message(call.from_user.id, f'Еще вопросы? 👇', reply_markup=boss_menu)
+        positions_menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1) \
+            .add(*(KeyboardButton(text) for text in positions))
+
+        await bot.send_message(call.from_user.id, 'Выбери должность 👇', reply_markup=positions_menu)
 
     elif 'del=' in call.data:
         user_id = call.data.split('=')[1]
+        name = call.data.split('=')[0]
         await db.delete('users', 'user_id', str(user_id))
-        await call.message.edit_text('Удалили сотрудника 😈')
+        await call.message.edit_text(f'Удалили сотрудника {name} 😈')
         await bot.send_message(call.from_user.id, f'Еще вопросы? 👇', reply_markup=boss_menu)
-
-    elif 'add=' in call.data:
-        _, user_id, first_name = call.data.split('=')
-        if not await db.is_active(user_id):
-            async with state.proxy() as data:
-                data['user_id'] = user_id
-                data['first_name'] = first_name
-            await NewStaff.next()
-            await NewStaff.position.set()
-            await bot.send_message(call.from_user.id, 'Выбери должность 👇', reply_markup=positions_menu)
-        else:
-            data = await db.get_user(user_id)
-            data = f'Сотрудник: {data[3]} {data[2]}\n' \
-                   f'Должность: {data[4]}\n' \
-                   f'Статус: {data[5]}'
-
-            await bot.send_message(call.from_user.id, f'Сотрудник уже в базе 🤷‍♂\n{data}',
-                                   reply_markup=boss_menu)
-            await state.finish()
 
 
 async def back(message: types.Message):
@@ -405,10 +365,8 @@ def register_handlers_delivery(d: Dispatcher):
     d.register_message_handler(cancel, commands='cancel', state='*')
     d.register_message_handler(cancel, Text(equals=['отмена', '❌ отмена', '⬆ Выйти'], ignore_case=True), state='*')
 
-    d.register_message_handler(add_staff, state=NewStaff.position)
     d.register_message_handler(update_staff, Text(equals=['обновить'], ignore_case=True), state=None)
     d.register_message_handler(update_staff_end, state=UpdateStaff.position)
-    d.register_message_handler(activate_staff, Text(equals=['активировать'], ignore_case=True), state=None)
     d.register_message_handler(delete_staff, Text(equals=['удалить'], ignore_case=True), state=None)
 
     d.register_message_handler(open_shift, Text(equals=['✅ Открыть смену'], ignore_case=True), state=None)
