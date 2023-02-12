@@ -3,7 +3,6 @@
 from aiogram import types
 from database.db import db
 from services.config import Settings
-from services.create_bot import bot
 from services.keybords import *
 from services.questions import help_msg
 
@@ -19,7 +18,8 @@ async def start(message: types.Message):
         await message.answer(f'Твой Telegram id: {user_id}')
 
     if message.text == '/start':
-        if user_id in tg.ADMINS or (await db.is_user_exist(user_id) and user_id in set(x[0] for x in await db.get_active())):
+        if user_id in tg.ADMINS or (
+                await db.is_user_exist(user_id) and user_id in set(x[0] for x in await db.get_active())):
             if user_id in tg.ADMINS:
                 await message.answer('Менюшечка 👇', reply_markup=boss_menu)
             elif await db.is_logist(user_id):
@@ -51,17 +51,16 @@ async def start(message: types.Message):
             await db.insert('users', [{
                 'user_id': user_id,
                 'username': username,
-                'first_name': first_name,
-                'last_name': last_name,
+                'first_name': first_name.strip(),
+                'last_name': last_name.strip(),
                 'position': 'Курьер',
                 'status': 1
             }])
 
-            welcome_msg = f'''
-                        Привет, {first_name} 👋
-                        Добро пожаловать в команду.
-                        Я бот помощник, запишу рабочую инфу.
-                        Нажмите октрыть смену, чтобы вставь в очередь 👇'''
+            welcome_msg = f'Привет, {first_name.strip()} 👋\n' \
+                          f'Добро пожаловать в команду.\n' \
+                          f'Я бот помощник, запишу рабочую инфу.\n' \
+                          f'Нажмите октрыть смену, чтобы вставь в очередь 👇'
 
             await message.answer(welcome_msg, reply_markup=start_menu)
 
@@ -79,4 +78,4 @@ async def start(message: types.Message):
 
 
 def register_handlers_client(dp: Dispatcher):
-    dp.register_message_handler(start, commands=['start', 'myid', 'help', 'log'])
+    dp.register_message_handler(start, commands=['start', 'myid', 'log', 'help'])

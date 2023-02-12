@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 import asyncio
 
+import pytils
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils.exceptions import Throttled
-
 from database.db import db
 from services.config import Settings
 from services.create_bot import bot, dp
-from services.functions import *
+from services.functions import get_current_datetime
 from services.keybords import *
 from services.questions import positions
-
 
 tg = Settings().tg
 g = Settings().gl
@@ -82,17 +81,6 @@ async def update_staff_end(message: types.Message, state=FSMContext):
         await message.reply('Выбери 👇', reply_markup=positions_menu)
 
 
-async def activate_staff(message: types.Message):
-    """Text(equals=['активировать']"""
-    staff = await db.get_no_active()
-    if staff:
-        staff_menu = InlineKeyboardMarkup(row_width=1) \
-            .add(*(InlineKeyboardButton(text=f'{i[3]} {i[2]}', callback_data=f'act={i[0]}') for i in staff))
-        await message.reply('Выбери сотрудника 👇', reply_markup=staff_menu)
-    else:
-        await message.reply('Нет не активированных 😬', reply_markup=boss_menu)
-
-
 async def delete_staff(message: types.Message):
     """Text(equals=['удалить']"""
     staff = await db.get_active()
@@ -104,61 +92,54 @@ async def delete_staff(message: types.Message):
         await message.reply('Никого нет дома 😬', reply_markup=boss_menu)
 
 
-class Queue(StatesGroup):
-    """Класс для сбора данных об очереди"""
-    line = State()
-    user_id = State()
-    staff = State()
-    status = State()
-
-
 async def open_shift(message: types.Message):
     """Начало работы"""
     user_id = message.from_user.id
-    if user_id not in set(x[0] for x in await db.get_active()):
-        await message.reply('Нет доступа', reply_markup=remove)
-    else:
-        line = await db.last_line(dt_formatted(6))
-        in_queue = await db.is_open(user_id, dt_formatted(6))
+    if user_id in set(x[0] for x in await db.get_active()):
+        line = await db.last_line()
         name = await db.get_user_name(user_id)
 
-        if not in_queue:
-            await db.insert('working_mode', [{
+        await db.insert('working_mode', [{
+            'user_id': user_id,
+            'staff': name,
+            'status': 0
+        }])
+
+        if line:
+            await db.insert('delivery', [{
                 'user_id': user_id,
+                'line': line + 1,
                 'staff': name,
-                'status': 0
+                'status': 1
+            }])
+        else:
+            await db.insert('delivery', [{
+                'user_id': user_id,
+                'line': 1,
+                'staff': name,
+                'status': 1
             }])
 
-            if line:
-                await db.insert('delivery', [{
-                    'user_id': user_id,
-                    'line': line + 1,
-                    'staff': name,
-                    'status': 1
-                }])
-            else:
-                await db.insert('delivery', [{
-                    'user_id': user_id,
-                    'line': 1,
-                    'staff': name,
-                    'status': 1
-                }])
+        await db.insert('working_mode', [{
+            'user_id': user_id,
+            'staff': name,
+            'status': 1
+        }])
 
-            await message.reply(f'<b>Смена открыта</b>\n'
-                                f'Вы записаны в очередь.\n'
-                                f'Хорошего рабочего дня.', reply_markup=queue_menu)
-            await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nОткрыл смену', reply_markup=remove)
-        else:
-            await message.answer(f'⚠ Вы уже сегодня отработали!!!\nЖдем вас завтра', reply_markup=start_menu)
+        await message.reply(f'<b>Смена открыта</b>\nВы записаны в очередь.\nХорошего рабочего дня.',
+                            reply_markup=queue_menu)
+
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
+        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nОткрыл смену', reply_markup=remove)
+    else:
+        await message.reply('Нет доступа', reply_markup=remove)
 
 
 async def queue_num(message: types.Message):
     """Позиция в очереди"""
     user_id = message.from_user.id
-    if user_id not in set(x[0] for x in await db.get_active()):
-        await message.reply('Нет доступа', reply_markup=remove)
-    else:
-        queue = await db.queue_num(dt_formatted(6))
+    if user_id in set(x[0] for x in await db.get_active()):
+        queue = await db.queue_num()
         if queue:
             for i, u_id in enumerate(queue):
                 if u_id[0] == user_id:
@@ -166,13 +147,15 @@ async def queue_num(message: types.Message):
                     break
         else:
             await message.answer(f'⚠ Вас нет в очереди!!!', reply_markup=staff_menu)
+    else:
+        await message.reply('Нет доступа', reply_markup=remove)
 
 
 async def queue(message: types.Message):
     """Список курьеров в очереди"""
     user_id = message.from_id
     if user_id in tg.ADMINS or user_id in set(x[0] for x in await db.get_active()):
-        queue = await db.queue(dt_formatted(6))
+        queue = await db.queue()
         if queue:
             queue_staff_menu = InlineKeyboardMarkup(row_width=1) \
                 .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'get_queue={text[0]}') for text in queue))
@@ -188,10 +171,10 @@ async def queue(message: types.Message):
 
 async def drive_off(message: types.Message):
     """Отъехать"""
-    if message.from_id not in set(x[0] for x in await db.get_active()):
-        await message.reply('Нет доступа', reply_markup=remove)
-    else:
+    if message.from_id in set(x[0] for x in await db.get_active()):
         await message.answer('Куда отъезжаете?', reply_markup=drive_out_menu)
+    else:
+        await message.reply('Нет доступа', reply_markup=remove)
 
 
 @dp.callback_query_handler()
@@ -201,13 +184,13 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
     except Throttled:
         return await call.answer('Слишком много запросов...')
 
-    name = call.from_user.full_name
-
     if call.data in ['Мойка', 'Шинка', 'Обед', 'Магазин', 'Прочее']:
         user_id = call.from_user.id
         name = await db.get_user_name(user_id)
         await db.update('delivery', {'status': 5}, {'user_id': user_id})
-        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nОтъехал <i>({call.data})</i>')
+        await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 5}])
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
+        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nОтъехал <i>({call.data})</i>')
         await call.message.edit_text(f'✅ Статус установлен')
         await bot.send_message(user_id, 'Когда вернётесь, нажмите кнопку 👇', reply_markup=back_menu_inline)
 
@@ -216,47 +199,56 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         name = await db.get_user_name(user_id)
         route_type = InlineKeyboardMarkup(row_width=2) \
             .add(
-            InlineKeyboardButton(text='ЭКС', callback_data=f'set_queue={user_id}=2=-1'),
-            InlineKeyboardButton(text='МОЛ', callback_data=f'set_queue={user_id}=3=-1'),
-            InlineKeyboardButton(text='Полный', callback_data=f'set_queue={user_id}=4=1'))
+            InlineKeyboardButton(text='ЭКС', callback_data=f'set_queue={user_id}=2'),
+            InlineKeyboardButton(text='МОЛ', callback_data=f'set_queue={user_id}=3'),
+            InlineKeyboardButton(text='Полный', callback_data=f'set_queue={user_id}=4'))
         await call.message.edit_text(f'{name}\nКуда отправляем?', reply_markup=route_type)
 
     elif 'set_queue=' in call.data:
-
-        _, user_id, status, line = call.data.split('=')
-        update = {
-            'status': status
-        }
-        last_line = await db.last_line(dt_formatted(6))
-        if line == 1:
-            update['line'] = last_line + 1
-        await db.update('delivery', update, {'user_id': user_id})
+        _, user_id, status = call.data.split('=')
         name = await db.get_user_name(user_id)
-        await call.message.edit_text("✅ Статус установлен")
-        if status == 2:
-            await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nНа экспресс доставке', reply_markup=remove)
-        elif status == 3:
-            await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nНа молнии', reply_markup=remove)
-        else:
-            await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nНа полном маршруте', reply_markup=remove)
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
 
-        msg = 'Вы отправлены на доставку.\nКогда вернётесь, нажмите кнопку 👇'
-        if status in [2, 3]:
-            await bot.send_message(user_id, msg, reply_markup=exp_menu)
+        if status == "2":
+            await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 2}])
+            await db.update('delivery', {'status': status, 'staff': f'ЭКСП - {name}'}, {'user_id': user_id})
+            await bot.send_message(tg.GROUP_ID, f'<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке',
+                                   reply_markup=remove)
+        elif status == "3":
+            await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 3}])
+            await db.update('delivery', {'status': status, 'staff': f'МОЛ - {name}'}, {'user_id': user_id})
+            await bot.send_message(tg.GROUP_ID, f'<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии', reply_markup=remove)
         else:
+            await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 4}])
+            await db.update('delivery', {'status': status}, {'user_id': user_id})
+            await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nНа полном маршруте', reply_markup=remove)
+
+        await call.message.edit_text("✅ Статус установлен")
+
+        if status in ["2", "3"]:
+            if status == "2":
+                msg = f'Вы отправлены на ЭКСП доставку.\nКогда вернётесь, нажмите кнопку 👇'
+                await bot.send_message(user_id, msg, reply_markup=exp_menu)
+            else:
+                msg = f'Вы отправлены на МОЛ доставку.\nКогда вернётесь, нажмите кнопку 👇'
+                await bot.send_message(user_id, msg, reply_markup=exp_menu)
+        else:
+            msg = 'Вы отправлены на полный маршрут.\nКогда вернётесь, нажмите кнопку 👇'
             await bot.send_message(user_id, msg, reply_markup=long_menu)
-        await asyncio.sleep(5)
-        queue = await db.queue(dt_formatted(6))
-        if queue:
-            queue_staff_menu = InlineKeyboardMarkup(row_width=1) \
-                .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'get_queue={text[0]}') for text in queue))
-            await call.message.edit_text(f'✅ Текущая очередь:', reply_markup=queue_staff_menu)
+        # await asyncio.sleep(5)
+        # queue = await db.queue()
+        # if queue:
+        #     queue_staff_menu = InlineKeyboardMarkup(row_width=1) \
+        #         .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'get_queue={text[0]}') for text in queue))
+        #     await call.message.edit_text(f'✅ Текущая очередь:', reply_markup=queue_staff_menu)
 
     elif call.data == "1":
         user_id = call.from_user.id
         name = await db.get_user_name(user_id)
         await db.update('delivery', {'status': 1}, {'user_id': user_id})
-        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nНа базе', reply_markup=remove)
+        await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 1}])
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
+        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nНа базе', reply_markup=remove)
         await call.message.edit_text("✅ Статус установлен")
         await bot.send_message(call.from_user.id, f'✅ Вы записаны в очередь.', reply_markup=queue_menu)
 
@@ -279,35 +271,41 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
 
     elif 'del=' in call.data:
         user_id = call.data.split('=')[1]
-        name = call.data.split('=')[0]
         await db.delete('users', 'user_id', str(user_id))
-        await call.message.edit_text(f'Удалили сотрудника {name} 😈')
+        await call.message.edit_text(f'Удалили сотрудника 😈')
         await bot.send_message(call.from_user.id, f'Еще вопросы? 👇', reply_markup=boss_menu)
 
 
 async def back(message: types.Message):
     """На базе"""
     user_id = message.from_user.id
-    if user_id not in set(x[0] for x in await db.get_active()):
-        await message.reply('Нет доступа', reply_markup=remove)
-    else:
-        line = await db.last_line(dt_formatted(6))
+    if user_id in set(x[0] for x in await db.get_active()):
+        line = await db.last_line()
         name = await db.get_user_name(user_id)
-        await db.update('delivery', {'line': line + 1, 'status': 1}, {'user_id': user_id})
-        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nНа базе', reply_markup=remove)
+        if line:
+            await db.update('delivery', {'line': line + 1, 'status': 1}, {'user_id': user_id})
+        else:
+            await db.update('delivery', {'line': 1, 'status': 1}, {'user_id': user_id})
+        await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 1}])
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
+        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nНа базе', reply_markup=remove)
         await message.answer(f'✅ Запись добавлена.\nВы записаны в очередь.', reply_markup=queue_menu)
+    else:
+        await message.reply('Нет доступа', reply_markup=remove)
 
 
 async def exp(message: types.Message):
     """После ЭКС/МОЛ"""
     user_id = message.from_user.id
-    if user_id not in set(x[0] for x in await db.get_active()):
-        await message.reply('Нет доступа', reply_markup=remove)
-    else:
+    if user_id in set(x[0] for x in await db.get_active()):
         name = await db.get_user_name(user_id)
-        await db.update('delivery', {'status': 1}, {'user_id': user_id})
-        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nВернулся с ЭКС/МОЛ', reply_markup=remove)
+        await db.update('delivery', {'status': 1, 'staff': name}, {'user_id': user_id})
+        await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 1}])
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
+        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nВернулся с ЭКС/МОЛ', reply_markup=remove)
         await message.answer(f'✅ Запись добавлена.\nВы записаны в очередь.', reply_markup=queue_menu)
+    else:
+        await message.reply('Нет доступа', reply_markup=remove)
 
 
 class CloseShift(StatesGroup):
@@ -330,13 +328,9 @@ async def close_shift_end(message: types.Message, state=FSMContext):
     if data['yes'] == 'Да':
         name = await db.get_user_name(user_id)
         await db.delete('delivery', 'user_id', str(user_id))
-        await db.insert('working_mode', [{
-            'user_id': user_id,
-            'staff': name,
-            'status': 6
-        }])
-
-        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\nЗакрыл смену', reply_markup=remove)
+        await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 6}])
+        date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
+        await bot.send_message(tg.GROUP_ID, f'<b>{name}</b>\n{date_time}\nЗакрыл смену', reply_markup=remove)
         await message.answer('✅ Смена закрыта', reply_markup=start_menu)
         await state.finish()
     else:

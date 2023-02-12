@@ -32,14 +32,9 @@ long_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, ro
 
 remove = ReplyKeyboardRemove()
 
-boss_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1) \
-    .add(KeyboardButton('Очередь'),
-         KeyboardButton('Обновить')
-    # KeyboardButton('📈 За сегодня📊 Отчет за день')
-    )
-    # .row(KeyboardButton('Удалить'),
-    #       KeyboardButton('Активировать'),
-    #       KeyboardButton('Обновить'))
+boss_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
+    .row(KeyboardButton('Очередь')) \
+    .row(KeyboardButton('Удалить'), KeyboardButton('Обновить'))
 
 back_menu = ReplyKeyboardMarkup(resize_keyboard=True) \
     .add(KeyboardButton('🏠 На базе'), KeyboardButton('❌ Закрыть смену'))

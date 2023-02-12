@@ -14,7 +14,11 @@ from services.keybords import set_commands, bot_commands
 
 async def on_startup(_):
     """Запуск бота (установка команд и рассылок)"""
-    await set_commands(dp, commands=bot_commands, admin_ids=Settings().tg.ADMINS)
+    admins = Settings().tg.ADMINS
+    if admins:
+        await set_commands(dp, bot_commands, admin_ids=admins)
+    else:
+        await set_commands(dp, bot_commands)
 
 
 @dp.errors_handler(exception=exceptions.RetryAfter)

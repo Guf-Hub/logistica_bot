@@ -7,6 +7,7 @@ from typing import Union, List, Tuple, Dict
 from aiosqlite import connect
 from services.config import Settings
 from services.logger import setup_logger
+from services.questions import states
 
 setup_logger("INFO")
 tg = Settings().tg
@@ -22,22 +23,8 @@ class SingletonDecorator(object):
             self.instance = self.klass(*args, **kwargs)
         return self.instance
 
-## основной
-# class Singleton:
-#     def __new__(cls, *args, **kwargs):
-#         if not hasattr(cls, "_instance"):
-#             cls._instance = super().__new__(cls)
-#         return cls._instance
-
-# class Singleton(object):
-#     def __new__(cls):
-#         if not hasattr(cls, 'instance'):
-#             cls.instance = super(Singleton, cls).__new__(cls)
-#         return cls.instance
-
 
 @SingletonDecorator
-# class Database(Singleton): # основной
 class Database:
     """Класс для работы с базой данных"""
 
@@ -51,21 +38,8 @@ class Database:
         for i in tables.keys():
             await self.cursor.executescript(tables[i])
 
-        rows = ['Смена открыта', 'На базе', 'Экспресс', 'Молния', 'Полный маршрут', 'Отъехал', 'Смена закрыта']
-        # info = await self.cursor.execute('SELECT * FROM states')
         if await db.fetchall('states', ['*']) is None:
-            await db.insert('states', [{'id': i, 'status': row} for i, row in enumerate(rows)])
-            # await db.drop_table('states')
-            # for user_id in tg.ADMINS:
-            #     if not await db.is_user_exist(user_id):
-            #         await db.insert('users', [{
-            #             'user_id': user_id,
-            #             'username': username,
-            #             'first_name': first_name,
-            #             'last_name': last_name,
-            #             'status': 1
-            #         }])
-
+            await db.insert('states', [{'id': i, 'status': row} for i, row in enumerate(states)])
         logging.info(f"Database {database.split('/')[1].upper()} connection made successfully")
 
     async def is_user_exist(self, user_id: Union[str, int]) -> bool:
@@ -103,11 +77,6 @@ class Database:
         await self.cursor.execute("SELECT * FROM users WHERE status=1 ORDER BY last_name")
         return await self.cursor.fetchall()
 
-    async def get_no_active(self) -> List[Tuple]:
-        """Получить все данные по сотрудникам из БД(users), статус активный (status=1)"""
-        await self.cursor.execute("SELECT * FROM users WHERE status=0 ORDER BY last_name")
-        return await self.cursor.fetchall()
-
     async def is_active(self, user_id: Union[str, int]) -> bool:
         """Проверка наличия user_id в БД(users) по user_id"""
         await self.cursor.execute("SELECT * FROM users WHERE user_id=? AND status=1", [user_id])
@@ -126,38 +95,30 @@ class Database:
         response = await self.cursor.fetchmany(1)
         return bool(len(response))
 
-    async def is_open(self, user_id: Union[str, int], date: str) -> bool:
-        """Проверка user_id, в очереди"""
-        await self.cursor.execute(f"SELECT * FROM working_mode "
-                                  f"WHERE user_id=? AND date(add_date_time)=? AND status=0", [user_id, date])
-        response = await self.cursor.fetchmany(1)
-        return bool(len(response))
-
-    async def last_line(self, date: str):
+    async def last_line(self):
         """Последний номер в очереди"""
         await self.cursor.execute(
-            "SELECT MAX(line) FROM delivery WHERE date(add_date_time)=?", [date])
+            "SELECT MAX(line) FROM delivery")
         line = await self.cursor.fetchone()
         if line:
             return line[0]
         else:
             return None
 
-    async def queue_num(self, date: str):
-        """Номер в очереди по user_id на дату"""
+    async def queue_num(self):
+        """Номер в очереди по user_id"""
         await self.cursor.execute(
-            f"SELECT user_id FROM delivery WHERE date(add_date_time)=?", [date])
+            f"SELECT user_id FROM delivery WHERE status in (1,2,3) ORDER BY line")
         num = await self.cursor.fetchall()
         if num:
             return num
         else:
             return None
 
-    async def queue(self, date: str):
-        """Список очереди на дату"""
+    async def queue(self):
+        """Список очереди"""
         await self.cursor.execute(
-            f"SELECT user_id, staff, line, status FROM delivery "
-            f"WHERE date(add_date_time)=? AND status=1", [date])  # ORDER BY line
+            f"SELECT user_id, staff, line, status FROM delivery WHERE status IN (1,2,3) ORDER BY line")
         queue = await self.cursor.fetchall()
         if queue:
             return queue
@@ -232,6 +193,7 @@ class Database:
         logging.info(f'Удалили данные в БД, таблица {table.upper()} {rows.rowcount} записей')
 
     async def close(self, dp):
+        """Закрыть соединение"""
         await self.conn.close()
 
 
