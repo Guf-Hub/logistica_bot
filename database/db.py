@@ -43,7 +43,7 @@ class Database:
         logging.info(f"Database {database.split('/')[1].upper()} connection made successfully")
 
     async def is_user_exist(self, user_id: Union[str, int]) -> bool:
-        """Проверка наличия user_id в БД(users) по user_id"""
+        """Проверка наличия user_id в БД(users)"""
         await self.cursor.execute("SELECT * FROM users WHERE user_id=?", [user_id])
         response = await self.cursor.fetchmany(1)
         return bool(len(response))
@@ -66,12 +66,6 @@ class Database:
         else:
             return None
 
-    async def get_active_staff_names(self) -> List[Tuple]:
-        """Получить user_id, first_name, last_name сотрудника из БД(users), статус активный (status=1)"""
-        await self.cursor.execute(f"SELECT user_id, first_name, last_name FROM users "
-                                  f"WHERE status=1 ORDER BY last_name").fetchall()
-        return await self.cursor.fetchall()
-
     async def get_active(self) -> List[Tuple]:
         """Получить все данные по сотрудникам из БД(users), статус активный (status=1)"""
         await self.cursor.execute("SELECT * FROM users WHERE status=1 ORDER BY last_name")
@@ -83,17 +77,6 @@ class Database:
                                   f"WHERE status=1 AND position='Курьер' ORDER BY last_name")
         return await self.cursor.fetchall()
 
-    async def is_active(self, user_id: Union[str, int]) -> bool:
-        """Проверка наличия user_id в БД(users) по user_id"""
-        await self.cursor.execute("SELECT * FROM users WHERE user_id=? AND status=1", [user_id])
-        response = await self.cursor.fetchmany(1)
-        return bool(len(response))
-
-    async def get_logists(self) -> List[Tuple]:
-        """Получить список user_id Логистов из БД(users)"""
-        await self.cursor.execute("SELECT user_id FROM users WHERE position='Логист' AND status=1")
-        return await self.cursor.fetchall()
-
     async def is_logist(self, user_id: Union[str, int]) -> bool:
         """Проверка user_id, что должность Логист в БД(users)"""
         await self.cursor.execute(f"SELECT * FROM users "
@@ -102,7 +85,7 @@ class Database:
         return bool(len(response))
 
     async def open_shift(self) -> bool:
-        """Проверка user_id, в очереди"""
+        """Проверка количества открытых и закрытых смен в БД(working_mode)"""
         await self.cursor.execute(f"SELECT user_id, staff, COUNT(*) AS count "
                                   f"FROM working_mode WHERE status IN (0, 6) "
                                   f"GROUP BY staff HAVING COUNT(*) % 2 != 0;")
@@ -271,7 +254,7 @@ sql_tables = {
 
     'users': '''CREATE TABLE IF NOT EXISTS users (
     user_id    INTEGER         PRIMARY KEY ASC,
-    username   VARCHAR (4, 32)    NOT NULL,
+    username   VARCHAR (4, 32) NOT NULL,
     first_name VARCHAR (1, 64) NOT NULL,
     last_name  VARCHAR (1, 64) NOT NULL,
     position   VARCHAR (1, 30),

@@ -405,12 +405,7 @@ async def empty(message: types.Message):
 
     user_id = message.from_user.id
     if user_id in tg.ADMINS or user_id in set(x[0] for x in await db.get_active()):
-        if user_id in tg.ADMINS:
-            await message.answer('Что за ересь??? 🤣\nУчи матчасть >>> /help', disable_web_page_preview=True)
-        elif await db.is_logist(user_id):
-            await message.answer('Что за ересь??? 🤣\nУчи матчасть >>> /help', disable_web_page_preview=True)
-        else:
-            await message.answer('Что за ересь??? 🤣\nУчи матчасть >>> /help', disable_web_page_preview=True)
+        await message.answer('Что за ересь??? 🤣\nУчи матчасть >>> /help', disable_web_page_preview=True)
     else:
         await message.reply('Нет доступа', reply_markup=remove)
 
