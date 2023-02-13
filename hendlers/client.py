@@ -21,7 +21,7 @@ async def start(message: types.Message):
         if user_id in tg.ADMINS or (
                 await db.is_user_exist(user_id) and user_id in set(x[0] for x in await db.get_active())):
             if user_id in tg.ADMINS:
-                await message.answer('Менюшечка 👇', reply_markup=boss_menu)
+                await message.answer('Менюшечка 👇', reply_markup=admin_menu)
             elif await db.is_logist(user_id):
                 await message.answer('Менюшечка 👇', reply_markup=logist_menu)
             else:
@@ -69,7 +69,7 @@ async def start(message: types.Message):
         """Подсказка"""
         if message.text == '/help':
             if user_id in tg.ADMINS:
-                await message.answer(help_msg['boss'], disable_web_page_preview=True)
+                await message.answer(help_msg['admin'], disable_web_page_preview=True)
             elif await db.is_logist(user_id):
                 await message.answer(help_msg['logist'], disable_web_page_preview=True)
             else:

@@ -17,23 +17,13 @@ class TgBot(DefaultConfig):
     TELEGRAM_TOKEN: Optional[str] = None
     TELEGRAM_DEV_TOKEN: Optional[str] = None
     ADMINS: Optional[List[int]] = None
-    BOSS: Optional[List[int]] = None
     MASTER: Optional[int] = None
     GROUP_ID: Optional[List[Union[str, list]]] = None
-
-
-class Google(DefaultConfig):
-    """Google API settings"""
-    PASSWORD: Optional[str] = None
-    SERVICE_ACCOUNT_FILE: Optional[str] = None
-    BOOK_MAIN: Optional[str] = None
-    SHEET_DELIVERY: Optional[str] = None
 
 
 class Settings(BaseSettings):
     """App base settings"""
     tg: TgBot = TgBot()
-    gl: Google = Google()
 
 
 class Restrictions:

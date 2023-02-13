@@ -32,11 +32,14 @@ long_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, ro
 
 remove = ReplyKeyboardRemove()
 
-boss_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
+admin_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
     .row(KeyboardButton('Очередь')) \
     .row(KeyboardButton('🗂 Отчет .csv'), KeyboardButton('📊 По сотруднику')) \
     .row(KeyboardButton('Удалить'), KeyboardButton('Обновить')) \
     .row(KeyboardButton('❌ Закрыть'))
+
+logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1) \
+    .add(KeyboardButton('Очередь'), KeyboardButton('📊 По сотруднику'), KeyboardButton('❌ Закрыть'))
 
 back_menu = ReplyKeyboardMarkup(resize_keyboard=True) \
     .add(KeyboardButton('🏠 На базе'), KeyboardButton('❌ Закрыть смену'))
@@ -53,13 +56,7 @@ drive_out_menu = InlineKeyboardMarkup(row_width=1) \
          InlineKeyboardButton(text='Прочее', callback_data='Прочее'))
 
 queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2) \
-    .add(KeyboardButton('🚗 Отъехать'),
-         KeyboardButton('⏳ Позиция в очереди'),
-         KeyboardButton('❌ Закрыть смену'))
-
-logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1) \
-    .add(KeyboardButton('Очередь'), KeyboardButton('📊 По сотруднику'))\
-    .row(KeyboardButton('❌ Закрыть'))
+    .add(KeyboardButton('🚗 Отъехать'), KeyboardButton('⏳ Позиция в очереди'), KeyboardButton('❌ Закрыть смену'))
 
 route_type = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('ЭКС'),

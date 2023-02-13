@@ -16,7 +16,6 @@ from services.keybords import *
 from services.questions import positions
 
 tg = Settings().tg
-g = Settings().gl
 
 
 async def cancel(message: types.Message, state=FSMContext):
@@ -30,7 +29,7 @@ async def cancel(message: types.Message, state=FSMContext):
             if current_state is None:
                 await message.reply('Отмена выполнена')
                 if user_id in tg.ADMINS:
-                    await message.answer('Еще вопросы? 👇', reply_markup=boss_menu)
+                    await message.answer('Еще вопросы? 👇', reply_markup=admin_menu)
                 elif await db.is_logist(user_id):
                     await message.answer('Менюшечка 👇', reply_markup=queue_menu)
                 else:
@@ -39,7 +38,7 @@ async def cancel(message: types.Message, state=FSMContext):
                 await state.finish()
                 await message.reply('Отмена выполнена')
                 if user_id in tg.ADMINS:
-                    await message.answer('Еще вопросы? 👇', reply_markup=boss_menu)
+                    await message.answer('Еще вопросы? 👇', reply_markup=admin_menu)
                 elif await db.is_logist(user_id):
                     await message.answer('Менюшечка 👇', reply_markup=queue_menu)
                 else:
@@ -62,7 +61,7 @@ async def update_staff(message: types.Message):
             .add(*(InlineKeyboardButton(text=f'{i[3]} {i[2]}', callback_data=f'upd={i[0]}') for i in staff))
         await message.reply('Выбери сотрудника 👇', reply_markup=staff_menu)
     else:
-        await message.reply('Никого нет дома 😬', reply_markup=boss_menu)
+        await message.reply('Никого нет дома 😬', reply_markup=admin_menu)
 
 
 async def update_staff_end(message: types.Message, state=FSMContext):
@@ -72,7 +71,7 @@ async def update_staff_end(message: types.Message, state=FSMContext):
             data['position'] = text
         await UpdateStaff.next()
         await db.update('users', {'position': data['position']}, {'user_id': data['user_id']})
-        await message.answer(f'Должность обновили на {text} 😁', reply_markup=boss_menu)
+        await message.answer(f'Должность обновили на {text} 😁', reply_markup=admin_menu)
         await state.finish()
     else:
         await UpdateStaff.position.set()
@@ -89,7 +88,7 @@ async def delete_staff(message: types.Message):
             .add(*(InlineKeyboardButton(text=f'{i[3]} {i[2]}', callback_data=f'del={i[0]}') for i in staff))
         await message.reply('Выбери сотрудника 👇', reply_markup=staff_menu)
     else:
-        await message.reply('Никого нет дома 😬', reply_markup=boss_menu)
+        await message.reply('Никого нет дома 😬', reply_markup=admin_menu)
 
 
 async def open_shift(message: types.Message):
@@ -161,7 +160,7 @@ async def queue(message: types.Message):
             await message.answer(f'✅ Текущая очередь:', reply_markup=queue_staff_menu)
         else:
             if user_id in tg.ADMINS:
-                await message.answer(f'⚠ Очередь пуста!!!', reply_markup=boss_menu)
+                await message.answer(f'⚠ Очередь пуста!!!', reply_markup=admin_menu)
             else:
                 await message.answer(f'⚠ Очередь пуста!!!', reply_markup=logist_menu)
     else:
@@ -283,7 +282,7 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         user_id = call.data.split('=')[1]
         await db.delete('users', 'user_id', str(user_id))
         await call.message.edit_text(f'Удалили сотрудника 😈')
-        await bot.send_message(call.from_user.id, f'Еще вопросы? 👇', reply_markup=boss_menu)
+        await bot.send_message(call.from_user.id, f'Еще вопросы? 👇', reply_markup=admin_menu)
 
     elif 'report=' in call.data:
         user_id = call.data.split('=')[1]
@@ -370,9 +369,12 @@ async def close_shift_end(message: types.Message, state=FSMContext):
 
 async def close_open_shift(message: types.Message):
     staff = await db.open_shift()
-    staff_menu = InlineKeyboardMarkup(row_width=1) \
-        .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'close={text[0]}') for text in staff))
-    await message.answer('Выберите сотрудника 👇', reply_markup=staff_menu)
+    if staff:
+        staff_menu = InlineKeyboardMarkup(row_width=1) \
+            .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'close={text[0]}') for text in staff))
+        await message.answer('Выберите сотрудника 👇', reply_markup=staff_menu)
+    else:
+        await message.answer('Все смены закрыты 😃')
 
 
 async def report_staff(message: types.Message):
