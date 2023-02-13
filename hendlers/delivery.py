@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import asyncio
+import os
 
 import pytils
 from aiogram import types
@@ -11,7 +11,7 @@ from aiogram.utils.exceptions import Throttled
 from database.db import db
 from services.config import Settings
 from services.create_bot import bot, dp
-from services.functions import get_current_datetime, dt_formatted
+from services.functions import get_current_datetime, dt_formatted, write_report_csv
 from services.keybords import *
 from services.questions import positions
 
@@ -275,6 +275,11 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         await call.message.edit_text(f'Удалили сотрудника 😈')
         await bot.send_message(call.from_user.id, f'Еще вопросы? 👇', reply_markup=boss_menu)
 
+    elif 'report=' in call.data:
+        user_id = call.data.split('=')[1]
+        response = await db.report(user_id, dt_formatted(6))
+        await call.message.edit_text('\n'.join([f'{i[0][0:-3]} | {i[1]} - {i[2]}' for i in response if i is not None]))
+
 
 async def back(message: types.Message):
     """На базе"""
@@ -338,14 +343,26 @@ async def close_shift_end(message: types.Message, state=FSMContext):
         await state.finish()
 
 
-async def report(message: types.Message):
-    print(await db.report(511078246, dt_formatted(6)))
-    staff = set(x[0] for x in await db.get_active())
-    queue_staff_menu = InlineKeyboardMarkup(row_width=1) \
-        .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'get_queue={text[0]}') for text in staff))
-    await db.report(511078246, dt_formatted(6))
+async def report_staff(message: types.Message):
+    staff = await db.get_active_courier()
+    staff_menu = InlineKeyboardMarkup(row_width=1) \
+        .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'report={text[0]}') for text in staff))
+    await message.answer('Выберите сотрудника 👇', reply_markup=staff_menu)
 
-    print(await db.report_csv())
+
+async def report_all(message: types.Message):
+    data = await db.report_csv()
+    dir_name = 'src'
+    if not os.path.exists(os.path.join(os.getcwd(), dir_name)):
+        os.mkdir(dir_name)
+
+    file = await write_report_csv(directory=os.path.join(os.getcwd(), dir_name),
+                                  name='courier.csv',
+                                  headers=['add_date_time', 'staff', 'status'],
+                                  data=data)
+    await bot.send_document(message.from_user.id, open(file, 'rb'))
+    os.remove(file)
+
 
 async def empty(message: types.Message):
     """Не понятные сообщения"""
@@ -380,5 +397,6 @@ def register_handlers_delivery(d: Dispatcher):
     d.register_message_handler(close_shift_start, Text(equals=['❌ Закрыть смену'], ignore_case=True), state=None)
     d.register_message_handler(close_shift_end, state=CloseShift.yes)
     d.register_message_handler(queue, Text(equals=['Очередь'], ignore_case=True), state=None)
-    d.register_message_handler(report, Text(equals=['Отчет по сотруднику'], ignore_case=True), state=None)
+    d.register_message_handler(report_staff, Text(equals=['📊 По сотруднику'], ignore_case=True), state=None)
+    d.register_message_handler(report_all, Text(equals=['🗂 Отчет .csv'], ignore_case=True), state=None)
     dp.register_message_handler(empty)

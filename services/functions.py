@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 import aiofiles
 import pytz
+import csv
 from aiocsv import AsyncWriter
 
 
@@ -100,14 +101,15 @@ def unique(file_name: str) -> None:
     open(file_name, 'w', encoding='utf-8').writelines(set(unique_lines))
 
 
-async def write_report_csv(directory: str, headers: list, data: list, cur_time: datetime):
+async def write_report_csv(directory: str, name: str, headers: list, data: list):
     """Асинхронное создание файла csv"""
-    async with aiofiles.open(f'{directory}/{cur_time}.csv', 'w') as file:
-        writer = AsyncWriter(file)
+    file_name = f'{directory}/{name}'
+    async with aiofiles.open(file_name, 'w', encoding='cp1251', newline='') as file:
+        writer = AsyncWriter(file, quoting=csv.QUOTE_MINIMAL, delimiter=';')
         if headers:
             await writer.writerow(headers)
         await writer.writerows(data)
-    return f'{directory}/{cur_time}.csv'
+    return file_name
 
 
 def create_directory(file_path: str) -> None:

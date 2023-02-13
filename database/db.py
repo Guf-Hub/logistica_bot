@@ -134,7 +134,8 @@ class Database:
     async def report(self, user_id: Union[str, int], date: str):
         """Отчет по сотруднику"""
         await self.cursor.execute(
-            f"SELECT add_date_time,staff, status FROM working_mode "
+            f"SELECT working_mode.add_date_time, working_mode.staff, states.status "
+            f"FROM working_mode JOIN states ON states.id = working_mode.status "
             f"WHERE user_id=? AND date(add_date_time)>=?", [user_id, date])
         response = await self.cursor.fetchall()
         if response:
@@ -145,7 +146,8 @@ class Database:
     async def report_csv(self):
         """Получить все данные"""
         await self.cursor.execute(
-            f"SELECT add_date_time,staff, status FROM working_mode")
+            f"SELECT working_mode.add_date_time, working_mode.staff, states.status FROM working_mode "
+            f"JOIN states ON states.id = working_mode.status")
         response = await self.cursor.fetchall()
         if response:
             return response

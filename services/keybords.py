@@ -34,6 +34,7 @@ remove = ReplyKeyboardRemove()
 
 boss_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
     .row(KeyboardButton('Очередь')) \
+    .row(KeyboardButton('🗂 Отчет .csv'), KeyboardButton('📊 По сотруднику')) \
     .row(KeyboardButton('Удалить'), KeyboardButton('Обновить'))
 
 back_menu = ReplyKeyboardMarkup(resize_keyboard=True) \
@@ -55,8 +56,8 @@ queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, r
          KeyboardButton('⏳ Позиция в очереди'),
          KeyboardButton('❌ Закрыть смену'))
 
-logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
-    .add(KeyboardButton('Очередь'))
+logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1) \
+    .add(KeyboardButton('Очередь'), KeyboardButton('📊 По сотруднику'))
 
 route_type = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('ЭКС'),
