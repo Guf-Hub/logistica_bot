@@ -58,11 +58,11 @@ class Database:
             return None
 
     async def get_user(self, user_id: Union[str, int]) -> List[Tuple]:
-        """Получить Фамилия Имя по user_id из БД(users)"""
+        """Получить * по user_id из БД(users)"""
         await self.cursor.execute(f"SELECT * FROM users WHERE user_id=?", [user_id])
-        name = await self.cursor.fetchmany(1)
-        if bool(len(name)):
-            return name[0]
+        user = await self.cursor.fetchmany(1)
+        if bool(len(user)):
+            return user[0]
         else:
             return None
 
@@ -101,8 +101,19 @@ class Database:
         response = await self.cursor.fetchmany(1)
         return bool(len(response))
 
+    async def open_shift(self) -> bool:
+        """Проверка user_id, в очереди"""
+        await self.cursor.execute(f"SELECT user_id, staff, COUNT(*) AS count "
+                                  f"FROM working_mode WHERE status IN (0, 6) "
+                                  f"GROUP BY staff HAVING COUNT(*) % 2 != 0;")
+        response = await self.cursor.fetchall()
+        if response:
+            return response
+        else:
+            return None
+
     async def last_line(self):
-        """Последний номер в очереди"""
+        """Последний номер в очереди из БД(delivery)"""
         await self.cursor.execute(
             "SELECT MAX(line) FROM delivery")
         line = await self.cursor.fetchone()
@@ -112,7 +123,7 @@ class Database:
             return None
 
     async def queue_num(self):
-        """Номер в очереди по user_id"""
+        """Номер в очереди по user_id из БД(delivery)"""
         await self.cursor.execute(
             f"SELECT user_id FROM delivery WHERE status in (1,2,3) ORDER BY line")
         num = await self.cursor.fetchall()
@@ -122,7 +133,7 @@ class Database:
             return None
 
     async def queue(self):
-        """Список очереди"""
+        """Список очереди из БД(delivery)"""
         await self.cursor.execute(
             f"SELECT user_id, staff, line, status FROM delivery WHERE status IN (1,2,3) ORDER BY line")
         queue = await self.cursor.fetchall()
@@ -131,12 +142,14 @@ class Database:
         else:
             return None
 
-    async def report(self, user_id: Union[str, int], date: str):
-        """Отчет по сотруднику"""
+    async def report(self, user_id: Union[str, int]):
+        """Отчет по user_id сотрудника из БД(working_mode)"""
         await self.cursor.execute(
-            f"SELECT working_mode.add_date_time, working_mode.staff, states.status "
-            f"FROM working_mode JOIN states ON states.id = working_mode.status "
-            f"WHERE user_id=? AND date(add_date_time)>=?", [user_id, date])
+            f"SELECT working_mode.add_date_time, working_mode.staff, states.status FROM working_mode "
+            f"JOIN states ON states.id = working_mode.status "
+            f"WHERE user_id=? AND date(add_date_time)>=date(("
+            f"SELECT MAX(add_date_time) "
+            f"FROM working_mode WHERE user_id=? AND status=0))", [user_id, user_id])
         response = await self.cursor.fetchall()
         if response:
             return response
@@ -144,7 +157,7 @@ class Database:
             return None
 
     async def report_csv(self):
-        """Получить все данные"""
+        """Получить все данные по сотрудникам из БД(working_mode)"""
         await self.cursor.execute(
             f"SELECT working_mode.add_date_time, working_mode.staff, states.status FROM working_mode "
             f"JOIN states ON states.id = working_mode.status")
@@ -173,8 +186,8 @@ class Database:
         request = f'SELECT {columns} FROM {table} WHERE {value}'
         await self.cursor.execute(request, tuple(filters.values()))
         result = await self.cursor.fetchone()
-        if not await result.fetchone():
-            return
+        if not result:
+            return None
         result_dict = {}
         for index, col in enumerate(columns.split(',')):
             result_dict[col.strip()] = result[index]
@@ -186,7 +199,7 @@ class Database:
         await self.cursor.execute(f"SELECT {columns_joined} FROM {table}")
         rows = await self.cursor.fetchall()
         if not rows:
-            return
+            return None
         result = []
         for row in rows:
             dict_row = {}
@@ -234,7 +247,7 @@ sql_tables = {
                                   REFERENCES users (user_id) ON DELETE CASCADE
                                                              ON UPDATE CASCADE,
     staff         VARCHAR (1, 30) NOT NULL,
-    status        INTEGER         DEFAULT (1) 
+    status        INTEGER         DEFAULT (0) 
                                   NOT NULL
                                   REFERENCES status (id) ON DELETE CASCADE
                                                          ON UPDATE CASCADE);''',

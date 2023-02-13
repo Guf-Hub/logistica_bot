@@ -64,13 +64,6 @@ def seconds_to_time(seconds: int, time_format: str = 'short') -> str:
         return "%02d:%02d" % (hours, minutes)
 
 
-# не используем
-def _get_current_datetime(days: int = 0, hours: int = 3) -> datetime:
-    """Получение реального времени на сервере. При добавлении days, можно получить смещение на n дней"""
-    delta = timedelta(days=days, hours=hours, minutes=0)
-    return datetime.now(timezone.utc) + delta
-
-
 def time_in_range(period: int = None, date: str = None):
     """Текущее время в диапазоне [start, end]"""
     import datetime

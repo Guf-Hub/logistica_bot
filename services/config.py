@@ -2,6 +2,8 @@ from typing import List, Optional, Union
 
 from pydantic import BaseSettings
 
+DEV = True
+
 
 class DefaultConfig(BaseSettings):
     class Config:
@@ -11,14 +13,17 @@ class DefaultConfig(BaseSettings):
 
 
 class TgBot(DefaultConfig):
-    TELEGRAM_TOKEN: str
+    """Telegram API settings"""
+    TELEGRAM_TOKEN: Optional[str] = None
+    TELEGRAM_DEV_TOKEN: Optional[str] = None
     ADMINS: Optional[List[int]] = None
     BOSS: Optional[List[int]] = None
     MASTER: Optional[int] = None
-    GROUP_ID: Optional[Union[str, int]] = None
+    GROUP_ID: Optional[List[Union[str, list]]] = None
 
 
 class Google(DefaultConfig):
+    """Google API settings"""
     PASSWORD: Optional[str] = None
     SERVICE_ACCOUNT_FILE: Optional[str] = None
     BOOK_MAIN: Optional[str] = None
@@ -26,6 +31,7 @@ class Google(DefaultConfig):
 
 
 class Settings(BaseSettings):
+    """App base settings"""
     tg: TgBot = TgBot()
     gl: Google = Google()
 

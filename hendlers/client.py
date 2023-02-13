@@ -27,6 +27,7 @@ async def start(message: types.Message):
             else:
                 await message.answer('Менюшечка 👇', reply_markup=start_menu)
         else:
+            """Добавление новго сотрудника"""
             username = message.from_user.username
             name = message.from_user.full_name
             first_name = message.from_user.first_name
@@ -65,6 +66,7 @@ async def start(message: types.Message):
             await message.answer(welcome_msg, reply_markup=start_menu)
 
     if user_id in tg.ADMINS or user_id in set(x[0] for x in await db.get_active()):
+        """Подсказка"""
         if message.text == '/help':
             if user_id in tg.ADMINS:
                 await message.answer(help_msg['boss'], disable_web_page_preview=True)
@@ -72,7 +74,7 @@ async def start(message: types.Message):
                 await message.answer(help_msg['logist'], disable_web_page_preview=True)
             else:
                 await message.answer(help_msg['staff'], disable_web_page_preview=True)
-
+        """Получить файл лога ошибок"""
         if message.text == '/log' and user_id in tg.ADMINS:
             await message.answer_document(open(f'app.log', 'rb'))
 
