@@ -9,16 +9,16 @@ from database.db import db
 from hendlers import *
 from services.config import Settings
 from services.create_bot import dp
-from services.keybords import set_commands, staff_commands
+from services.keybords import set_commands, staff_commands, admin_commands
 
 
 async def on_startup(_):
     """Запуск бота (установка команд и рассылок)"""
     admins = Settings().tg.ADMINS
     if admins:
-        await set_commands(dp, bot_commands=staff_commands, admin_ids=admins)
+        await set_commands(dp, admin_ids=admins, admin_commands=admin_commands)
     else:
-        await set_commands(dp, bot_commands)
+        await set_commands(dp, bot_commands=staff_commands)
 
 
 @dp.errors_handler(exception=exceptions.RetryAfter)
