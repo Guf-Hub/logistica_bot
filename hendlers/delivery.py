@@ -171,7 +171,7 @@ async def drive_off(message: types.Message):
     """Отъехать"""
     if message.from_id in set(x[0] for x in await db.get_active()):
         drive_out_menu =  InlineKeyboardMarkup(row_width=1) \
-            .add(*(InlineKeyboardButton(text=f'{i}', callback_data={i}) for i in drive_out))
+            .add(*(InlineKeyboardButton(text=i, callback_data=i) for i in drive_out))
         await message.answer('Куда отъезжаете?', reply_markup=drive_out_menu)
     else:
         await message.reply('Нет доступа', reply_markup=remove)
