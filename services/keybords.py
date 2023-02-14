@@ -51,12 +51,12 @@ queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, 
 yes_no = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('Да'), KeyboardButton('Нет'))
 
-staff_commands = [
+commands_staff = [
     BotCommand(command='/start', description='запуск бота (если меню потеряется)'),
     BotCommand(command='/myid', description='мой id'),
     BotCommand(command='/help', description='справка')]
 
-admin_commands = [
+commands_admin = [
     BotCommand(command='/start', description='запуск бота (если меню потеряется)'),
     BotCommand(command='/myid', description='мой id'),
     BotCommand(command='/help', description='справка'),
@@ -68,14 +68,14 @@ async def set_commands(dp: Dispatcher,
                        admin_ids: List[int] = None,
                        admin_commands: List[BotCommand] = None):
     """Установка меню команд для бота"""
-    await dp.bot.set_my_commands(commands=staff_commands)
+    if staff_commands:
+        await dp.bot.set_my_commands(commands=staff_commands)
 
-    if admin_ids:
-
+    if admin_ids and admin_commands:
         for admin_id in admin_ids:
             try:
                 await dp.bot.set_my_commands(
-                    commands=staff_commands,
+                    commands=admin_commands,
                     scope=BotCommandScopeChat(admin_id)
                 )
             except ChatNotFound as e:
