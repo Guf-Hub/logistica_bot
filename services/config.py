@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseSettings
 
-DEV = True
+DEV = False
 
 
 class DefaultConfig(BaseSettings):
