@@ -223,15 +223,15 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         if int(user_id) in set(x[0] for x in await db.get_active()):
             if status == "2":
                 await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 2}])
-                await db.update('delivery', {'status': status, 'staff': f'ЭКСП - {name}'}, {'user_id': user_id})
+                await db.update('delivery', {'status': status, 'staff': f'❗ ЭКСП - {name}'}, {'user_id': user_id})
                 msg = f'Вы отправлены на ЭКСП доставку.\nКогда вернётесь, нажмите кнопку 👇'
                 await bot.send_message(user_id, msg, reply_markup=exp_menu)
 
-                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке')
-                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке')
+                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс')
+                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс')
             elif status == "3":
                 await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 3}])
-                await db.update('delivery', {'status': status, 'staff': f'МОЛ - {name}'}, {'user_id': user_id})
+                await db.update('delivery', {'status': status, 'staff': f'❗ МОЛ - {name}'}, {'user_id': user_id})
                 msg = f'Вы отправлены на МОЛ доставку.\nКогда вернётесь, нажмите кнопку 👇'
                 await bot.send_message(user_id, msg, reply_markup=exp_menu)
 
