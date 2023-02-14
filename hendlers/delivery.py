@@ -193,6 +193,8 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
         await bot.send_message(tg.GROUP_ID[0], f'<b>{name}</b>\n{date_time}\nОтъехал <i>({call.data})</i>')
         await call.message.edit_text(f'✅ Статус установлен')
+        message_id = call.message.message_id
+        await bot.edit_message_reply_markup(user_id, message_id-1, reply_markup=remove)
         await bot.send_message(user_id, 'Когда вернётесь, нажмите кнопку 👇', reply_markup=back_menu_inline)
 
     elif 'get_queue=' in call.data:
