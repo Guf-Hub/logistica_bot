@@ -163,7 +163,6 @@ cython_debug/
 .idea/
 
 .env
-services/creds.json
 bot/
 database/bot.db
 Lib/
