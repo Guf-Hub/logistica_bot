@@ -13,7 +13,7 @@ from services.config import Settings
 from services.create_bot import bot, dp
 from services.functions import get_current_datetime, write_report_csv
 from services.keybords import *
-from services.questions import positions
+from services.helper import positions, drive_out
 
 tg = Settings().tg
 
@@ -170,6 +170,8 @@ async def queue(message: types.Message):
 async def drive_off(message: types.Message):
     """Отъехать"""
     if message.from_id in set(x[0] for x in await db.get_active()):
+        drive_out_menu =  InlineKeyboardMarkup(row_width=1) \
+            .add(*(InlineKeyboardButton(text=f'{i}', callback_data=f'upd={i}') for i in drive_out))
         await message.answer('Куда отъезжаете?', reply_markup=drive_out_menu)
     else:
         await message.reply('Нет доступа', reply_markup=remove)
@@ -214,42 +216,40 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         username = user[1]
         date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
 
-        if status == "2":
-            await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 2}])
-            await db.update('delivery', {'status': status, 'staff': f'ЭКСП - {name}'}, {'user_id': user_id})
-            await bot.send_message(tg.GROUP_ID[0],
-                                   f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке',
-                                   reply_markup=remove)
-            await bot.send_message(tg.GROUP_ID[1],
-                                   f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке',
-                                   reply_markup=remove)
-        elif status == "3":
-            await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 3}])
-            await db.update('delivery', {'status': status, 'staff': f'МОЛ - {name}'}, {'user_id': user_id})
-            await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии',
-                                   reply_markup=remove)
-            await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии',
-                                   reply_markup=remove)
-        else:
-            await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 4}])
-            await db.update('delivery', {'status': status}, {'user_id': user_id})
-            await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name}</b>\n{date_time}\nНа полном маршруте',
-                                   reply_markup=remove)
-            await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name}</b>\n{date_time}\nНа полном маршруте',
-                                   reply_markup=remove)
-        await call.message.edit_text("✅ Статус установлен")
+        if int(user_id) in set(x[0] for x in await db.get_active()):
+            if status == "2":
+                await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 2}])
+                await db.update('delivery', {'status': status, 'staff': f'ЭКСП - {name}'}, {'user_id': user_id})
+                msg = f'Вы отправлены на ЭКСП доставку.\nКогда вернётесь, нажмите кнопку 👇'
+                await bot.send_message(user_id, msg, reply_markup=exp_menu)
 
-        if user_id in set(x[0] for x in await db.get_active()):
-            if status in ["2", "3"]:
-                if status == "2":
-                    msg = f'Вы отправлены на ЭКСП доставку.\nКогда вернётесь, нажмите кнопку 👇'
-                    await bot.send_message(user_id, msg, reply_markup=exp_menu)
-                else:
-                    msg = f'Вы отправлены на МОЛ доставку.\nКогда вернётесь, нажмите кнопку 👇'
-                    await bot.send_message(user_id, msg, reply_markup=exp_menu)
+                await bot.send_message(tg.GROUP_ID[0],
+                                       f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке',
+                                       reply_markup=remove)
+                await bot.send_message(tg.GROUP_ID[1],
+                                       f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс доставке',
+                                       reply_markup=remove)
+            elif status == "3":
+                await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 3}])
+                await db.update('delivery', {'status': status, 'staff': f'МОЛ - {name}'}, {'user_id': user_id})
+                msg = f'Вы отправлены на МОЛ доставку.\nКогда вернётесь, нажмите кнопку 👇'
+                await bot.send_message(user_id, msg, reply_markup=exp_menu)
+
+                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии',
+                                       reply_markup=remove)
+                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии',
+                                       reply_markup=remove)
             else:
+                await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 4}])
+                await db.update('delivery', {'status': status}, {'user_id': user_id})
                 msg = 'Вы отправлены на полный маршрут.\nКогда вернётесь, нажмите кнопку 👇'
                 await bot.send_message(user_id, msg, reply_markup=long_menu)
+
+                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name}</b>\n{date_time}\nНа полном маршруте',
+                                       reply_markup=remove)
+                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name}</b>\n{date_time}\nНа полном маршруте',
+                                       reply_markup=remove)
+            await call.message.edit_text("✅ Статус установлен")
 
     elif call.data == "1":
         user_id = call.from_user.id

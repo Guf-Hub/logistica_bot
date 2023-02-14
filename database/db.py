@@ -7,7 +7,7 @@ from typing import Union, List, Tuple, Dict
 from aiosqlite import connect
 from services.config import Settings
 from services.logger import setup_logger
-from services.questions import states
+from services.helper import states
 
 setup_logger("INFO")
 tg = Settings().tg

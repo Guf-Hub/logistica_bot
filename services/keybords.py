@@ -10,59 +10,43 @@ from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButt
 from aiogram.utils.exceptions import ChatNotFound
 
 # Описание и кнопки
-start_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
+start_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False) \
     .add(KeyboardButton('✅ Открыть смену'))
 
-staff_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2) \
+staff_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=2) \
     .add(KeyboardButton('🏠 На базе'),
          KeyboardButton('⚡ После ЭКС/МОЛ'),
          KeyboardButton('⏳ Позиция в очереди'),
          KeyboardButton('🚗 Отъехать'),
          KeyboardButton('❌ Закрыть смену'))
 
-exp_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2) \
+exp_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=2) \
     .add(KeyboardButton('⚡ После ЭКС/МОЛ'),
          KeyboardButton('🚗 Отъехать'),
          KeyboardButton('❌ Закрыть смену'))
 
-long_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2) \
+long_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=2) \
     .add(KeyboardButton('🏠 На базе'),
          KeyboardButton('🚗 Отъехать'),
          KeyboardButton('❌ Закрыть смену'))
 
 remove = ReplyKeyboardRemove()
 
-admin_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True) \
+admin_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False) \
     .row(KeyboardButton('Очередь')) \
     .row(KeyboardButton('🗂 Отчет .csv'), KeyboardButton('📊 По сотруднику')) \
     .row(KeyboardButton('Удалить'), KeyboardButton('Обновить')) \
     .row(KeyboardButton('❌ Закрыть'))
 
-logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1) \
+logist_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=1) \
     .add(KeyboardButton('Очередь'), KeyboardButton('📊 По сотруднику'), KeyboardButton('❌ Закрыть'))
-
-back_menu = ReplyKeyboardMarkup(resize_keyboard=True) \
-    .add(KeyboardButton('🏠 На базе'), KeyboardButton('❌ Закрыть смену'))
 
 back_menu_inline = InlineKeyboardMarkup(row_width=1) \
     .add(InlineKeyboardButton(text='🏠 На базе', callback_data=1),
          InlineKeyboardButton(text='❌ Закрыть смену', callback_data=6))
 
-drive_out_menu = InlineKeyboardMarkup(row_width=1) \
-    .add(InlineKeyboardButton(text='Мойка', callback_data='Мойка'),
-         InlineKeyboardButton(text='Шинка', callback_data='Шинка'),
-         InlineKeyboardButton(text='Обед', callback_data='Обед'),
-         InlineKeyboardButton(text='Магазин', callback_data='Магазин'),
-         InlineKeyboardButton(text='Прочее', callback_data='Прочее'))
-
-queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2) \
+queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=2) \
     .add(KeyboardButton('🚗 Отъехать'), KeyboardButton('⏳ Позиция в очереди'), KeyboardButton('❌ Закрыть смену'))
-
-route_type = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
-    .add(KeyboardButton('ЭКС'),
-         KeyboardButton('МОЛ'),
-         KeyboardButton('Полный'),
-         KeyboardButton('❌ Отмена'))
 
 yes_no = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('Да'), KeyboardButton('Нет'))

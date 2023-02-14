@@ -4,7 +4,7 @@ from aiogram import types
 from database.db import db
 from services.config import Settings
 from services.keybords import *
-from services.questions import help_msg
+from services.helper import help_msg
 
 tg = Settings().tg
 

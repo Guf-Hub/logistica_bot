@@ -169,3 +169,4 @@ database/bot.db
 Lib/
 Scripts/
 pyvenv.cfg
+test.py
