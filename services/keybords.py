@@ -22,12 +22,12 @@ staff_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, 
 
 exp_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=2) \
     .add(KeyboardButton('⚡ После ЭКС/МОЛ'),
-         # KeyboardButton('🚗 Отъехать'),
+         KeyboardButton('🚗 Отъехать'),
          KeyboardButton('❌ Закрыть смену'))
 
 long_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, row_width=2) \
     .add(KeyboardButton('🏠 На базе'),
-         # KeyboardButton('🚗 Отъехать'),
+         KeyboardButton('🚗 Отъехать'),
          KeyboardButton('❌ Закрыть смену'))
 
 remove = ReplyKeyboardRemove()

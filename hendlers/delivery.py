@@ -192,7 +192,7 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
     if call.data in drive_out:
         user_id = call.from_user.id
         name = await db.get_user_name(user_id)
-        await db.update('delivery', {'status': 5}, {'user_id': user_id})
+        await db.update('delivery', {'status': 5, 'staff': name}, {'user_id': user_id})
         await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 5}])
         date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
         await bot.send_message(tg.GROUP_ID[0], f'<b>{name}</b>\n{date_time}\nОтъехал <i>({call.data})</i>')
