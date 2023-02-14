@@ -51,7 +51,7 @@ queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, 
 yes_no = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('Да'), KeyboardButton('Нет'))
 
-commands = [
+staff_commands = [
     BotCommand(command='/start', description='запуск бота (если меню потеряется)'),
     BotCommand(command='/myid', description='мой id'),
     BotCommand(command='/help', description='справка')]
