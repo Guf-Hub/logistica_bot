@@ -9,14 +9,14 @@ from database.db import db
 from hendlers import *
 from services.config import Settings
 from services.create_bot import dp
-from services.keybords import set_commands, bot_commands
+from services.keybords import set_commands, commands
 
 
 async def on_startup(_):
     """Запуск бота (установка команд и рассылок)"""
     admins = Settings().tg.ADMINS
     if admins:
-        await set_commands(dp, bot_commands, admin_ids=admins)
+        await set_commands(dp, bot_commands=commands, admin_ids=admins)
     else:
         await set_commands(dp, bot_commands)
 

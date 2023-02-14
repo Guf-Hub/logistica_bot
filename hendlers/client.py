@@ -25,7 +25,10 @@ async def start(message: types.Message):
             elif await db.is_logist(user_id):
                 await message.answer('Менюшечка 👇', reply_markup=logist_menu)
             else:
-                await message.answer('Менюшечка 👇', reply_markup=start_menu)
+                if user_id not in set(x[0] for x in await db.open_shift()):
+                    await message.answer('Менюшечка 👇', reply_markup=start_menu)
+                else:
+                    await message.reply('Менюшечка 👇', reply_markup=queue_menu)
         else:
             """Добавление новго сотрудника"""
             username = message.from_user.username

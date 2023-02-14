@@ -51,15 +51,15 @@ queue_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False, 
 yes_no = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2) \
     .add(KeyboardButton('Да'), KeyboardButton('Нет'))
 
-bot_commands = [
+commands = [
     BotCommand(command='/start', description='запуск бота (если меню потеряется)'),
     BotCommand(command='/myid', description='мой id'),
     BotCommand(command='/help', description='справка')]
 
 
-async def set_commands(dp: Dispatcher, commands: List[BotCommand], admin_ids: List[int] = None):
+async def set_commands(dp: Dispatcher, bot_commands: List[BotCommand], admin_ids: List[int] = None):
     """Установка меню команд для бота"""
-    await dp.bot.set_my_commands(commands=commands)
+    await dp.bot.set_my_commands(commands=bot_commands)
 
     if admin_ids:
         commands_for_admin = [

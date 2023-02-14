@@ -89,11 +89,7 @@ class Database:
         await self.cursor.execute(f"SELECT user_id, staff, COUNT(*) AS count "
                                   f"FROM working_mode WHERE status IN (0, 6) "
                                   f"GROUP BY staff HAVING COUNT(*) % 2 != 0;")
-        response = await self.cursor.fetchall()
-        if response:
-            return response
-        else:
-            return None
+        return await self.cursor.fetchall()
 
     async def last_line(self):
         """Последний номер в очереди из БД(delivery)"""
