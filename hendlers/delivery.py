@@ -296,7 +296,7 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
             await bot.send_message(tg.GROUP_ID[0], f'<b>{name}</b>\n{date_time}\n{close_name} - закрыл смену')
         else:
             await bot.send_message(tg.GROUP_ID[0], f'<b>{name}</b>\n{date_time}\nАдмин - закрыл смену')
-        if user_id in set(x[0] for x in await db.get_active()):
+        if int(user_id) in set(x[0] for x in await db.get_active()):
             await bot.send_message(user_id, '✅ Смена закрыта', reply_markup=start_menu)
         await call.message.edit_text(f'✅ Смена закрыта')
 
