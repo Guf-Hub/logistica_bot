@@ -185,7 +185,7 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
     except Throttled:
         return await call.answer('Слишком много запросов...')
 
-    if call.data in ['Мойка', 'Шинка', 'Обед', 'Магазин', 'Прочее']:
+    if call.data in drive_out:
         user_id = call.from_user.id
         name = await db.get_user_name(user_id)
         await db.update('delivery', {'status': 5}, {'user_id': user_id})
