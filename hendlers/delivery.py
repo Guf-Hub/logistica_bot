@@ -227,30 +227,30 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
                 msg = f'Вы отправлены на ЭКСП доставку.\nКогда вернётесь, нажмите кнопку 👇'
                 await bot.send_message(user_id, msg, reply_markup=exp_menu)
 
-                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс')
-                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс')
+                await bot.send_message(tg.GROUP_ID[0], f'@{username}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс')
+                await bot.send_message(tg.GROUP_ID[1], f'@{username}\n<b>{name} (ЭКСП)</b>\n{date_time}\nНа экспресс')
             elif status == "3":
                 await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 3}])
                 await db.update('delivery', {'status': status, 'staff': f'❗ МОЛ - {name}'}, {'user_id': user_id})
                 msg = f'Вы отправлены на МОЛ доставку.\nКогда вернётесь, нажмите кнопку 👇'
                 await bot.send_message(user_id, msg, reply_markup=exp_menu)
 
-                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии')
-                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии')
+                await bot.send_message(tg.GROUP_ID[0], f'@{username}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии')
+                await bot.send_message(tg.GROUP_ID[1], f'@{username}\n<b>{name} (МОЛ)</b>\n{date_time}\nНа молнии')
             else:
                 await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 4}])
                 await db.update('delivery', {'status': status}, {'user_id': user_id})
                 msg = 'Вы отправлены на полный маршрут.\nКогда вернётесь, нажмите кнопку 👇'
                 await bot.send_message(user_id, msg, reply_markup=long_menu)
 
-                await bot.send_message(tg.GROUP_ID[0], f'@{user[1]}\n<b>{name}</b>\n{date_time}\nНа полном маршруте')
-                await bot.send_message(tg.GROUP_ID[1], f'@{user[1]}\n<b>{name}</b>\n{date_time}\nНа полном маршруте')
+                await bot.send_message(tg.GROUP_ID[0], f'@{username}\n<b>{name}</b>\n{date_time}\nНа полном маршруте')
+                await bot.send_message(tg.GROUP_ID[1], f'@{username}\n<b>{name}</b>\n{date_time}\nНа полном маршруте')
             await call.message.edit_text("✅ Статус установлен")
 
     elif call.data == "1":
         user_id = call.from_user.id
         name = await db.get_user_name(user_id)
-        await db.update('delivery', {'status': 1}, {'user_id': user_id})
+        await db.update('delivery', {'status': 1, 'staff': name}, {'user_id': user_id})
         await db.insert('working_mode', [{'user_id': user_id, 'staff': name, 'status': 1}])
         date_time = pytils.dt.ru_strftime(u"%d %B %y, %a", inflected=True, date=get_current_datetime())
         await bot.send_message(tg.GROUP_ID[0], f'<b>{name}</b>\n{date_time}\nНа базе')
@@ -258,7 +258,6 @@ async def callback_handler(call: types.CallbackQuery, state=FSMContext):
         await bot.send_message(call.from_user.id, f'✅ Вы записаны в очередь.', reply_markup=queue_menu)
 
     elif call.data == "6":
-        user_id = call.from_user.id
         await CloseShift.yes.set()
         await bot.send_message(call.from_user.id, 'Уверены, что хотите закрыть смену? 👇', reply_markup=yes_no)
 
@@ -366,9 +365,9 @@ async def close_shift_end(message: types.Message, state=FSMContext):
 async def close_open_shift(message: types.Message):
     staff = await db.open_shift()
     if staff:
-        staff_menu = InlineKeyboardMarkup(row_width=1) \
+        menu = InlineKeyboardMarkup(row_width=1) \
             .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'close={text[0]}') for text in staff))
-        await message.answer('Выберите сотрудника 👇', reply_markup=staff_menu)
+        await message.answer('Выберите сотрудника 👇', reply_markup=menu)
     else:
         await message.answer('Все смены закрыты 😃')
 
@@ -376,9 +375,9 @@ async def close_open_shift(message: types.Message):
 async def report_staff(message: types.Message):
     """Отчет по сотруднику с последней открытой смены"""
     staff = await db.get_active_courier()
-    staff_menu = InlineKeyboardMarkup(row_width=1) \
+    menu = InlineKeyboardMarkup(row_width=1) \
         .add(*(InlineKeyboardButton(text=f'{text[1]}', callback_data=f'report={text[0]}') for text in staff))
-    await message.answer('Выберите сотрудника 👇', reply_markup=staff_menu)
+    await message.answer('Выберите сотрудника 👇', reply_markup=menu)
 
 
 async def report_all(message: types.Message):
