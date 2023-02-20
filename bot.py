@@ -16,7 +16,7 @@ async def on_startup(_):
     """Запуск бота (установка команд и рассылок)"""
     admins = Settings().tg.ADMINS
     if admins:
-        await set_commands(dp, admin_ids=admins, admin_commands=commands_admin)
+        await set_commands(dp, staff_commands=commands_staff, admin_ids=admins, admin_commands=commands_admin)
     else:
         await set_commands(dp, staff_commands=commands_staff)
 
