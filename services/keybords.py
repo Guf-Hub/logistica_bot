@@ -74,32 +74,12 @@ async def set_commands(dp: Dispatcher,
         try:
             await dp.bot.delete_my_commands(scope=BotCommandScopeChat(user_id))
         except ChatNotFound as e:
-            logging.error(f"Удаление меню {user_id}: {e}")
+            logging.error(f"Удаление меню команд {user_id}: {e}")
 
     if staff_commands:
         await dp.bot.set_my_commands(commands=staff_commands)
 
     if admin_ids:
-        for admin_id in admin_ids:
-            try:
-                await dp.bot.set_my_commands(
-                    commands=admin_commands,
-                    scope=BotCommandScopeChat(admin_id)
-                )
-            except ChatNotFound as e:
-                logging.error(f"Установка команд для администратора {admin_id}: {e}")
-
-
-
-async def set_commands(dp: Dispatcher,
-                       staff_commands: List[BotCommand] = None,
-                       admin_ids: List[int] = None,
-                       admin_commands: List[BotCommand] = None):
-    """Установка меню команд для бота"""
-    if staff_commands:
-        await dp.bot.set_my_commands(commands=staff_commands)
-
-    if admin_ids and admin_commands:
         for admin_id in admin_ids:
             try:
                 await dp.bot.set_my_commands(
